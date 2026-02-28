@@ -86,3 +86,35 @@ def update_ref(commit_hash: str, tinygit_dir=".tinygit") -> None:
         file.write(commit_hash)
 
     return
+
+
+def commit(files: list[tuple[str, bytes]], message: str, tinygit_dir=".tinygit") -> str:
+    tree_entries: list[tuple[str, str, str]] = []
+    for filename, data in files:
+        blob_hash = write_blob(data, tinygit_dir)
+        tree_entries.append(("100644", filename, blob_hash))
+
+    tree_hash = write_tree(tree_entries, tinygit_dir)
+
+    parent_hash = None
+    headpath = os.path.join(tinygit_dir, "HEAD")
+    if os.path.exists(headpath):
+        with open(headpath) as head:
+            content = head.read().strip()
+
+        if content.startswith("ref:"):
+            ref_path = os.path.join(tinygit_dir, content.split(maxsplit=1)[1].strip())
+            if os.path.exists(ref_path):
+                with open(ref_path) as ref:
+                    parent_hash = ref.read().strip() or None
+
+    commit_hash = write_commit(
+        tree_hash=tree_hash,
+        message=message,
+        parent_hash=parent_hash,
+        tinygit_dir=tinygit_dir,
+    )
+
+    update_ref(commit_hash, tinygit_dir)
+
+    return commit_hash
