@@ -1,6 +1,7 @@
 import hashlib
 import os
 import zlib
+from datetime import datetime, timezone
 
 
 def init(path=".") -> None:
@@ -50,3 +51,25 @@ def write_tree(entries: list[tuple[str, str, str]], tinygit_dir=".tinygit") -> s
     store_content += tree_content
 
     return _store_object(store_content, tinygit_dir)
+
+
+def write_commit(
+    tree_hash: str, message: str, parent_hash: str | None = None, tinygit_dir=".tinygit"
+) -> str:
+    store_content = f"tree {tree_hash}\n"
+    store_content += f"parent {parent_hash}\n" if parent_hash else ""
+
+    timestamp = datetime.now(timezone.utc).timestamp()
+    store_content += (
+        f"author Ananyo Bhattacharya ananyobhattacharya10@gmail.com {timestamp}\n"
+    )
+    store_content += (
+        f"committer Ananyo Bhattacharya ananyobhattacharya10@gmail.com {timestamp}\n\n"
+    )
+
+    store_content += message
+
+    content = store_content.encode()
+    full = f"commit {len(content)}\0".encode() + content
+
+    return _store_object(full, tinygit_dir)
