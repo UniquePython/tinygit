@@ -73,3 +73,16 @@ def write_commit(
     full = f"commit {len(content)}\0".encode() + content
 
     return _store_object(full, tinygit_dir)
+
+
+def update_ref(commit_hash: str, tinygit_dir=".tinygit") -> None:
+    headpath = os.path.join(tinygit_dir, "HEAD")
+    with open(headpath) as head:
+        content = head.read()
+
+    branch = content.split(maxsplit=1)[1].strip()
+
+    with open(os.path.join(tinygit_dir, branch), "w") as file:
+        file.write(commit_hash)
+
+    return
